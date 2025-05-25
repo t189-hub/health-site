@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台北市小學學務處衛生組 - 行政服務網站</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 10px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .nav-item {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: block;
+        }
+
+        .nav-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            color: white;
+        }
+
+        /* CSS-only 頁面切換 */
+        .page {
+            display: none;
+        }
+
+        .page:target {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        #home {
+            display: block;
+        }
+
+        #home:not(:target) {
+            display: block;
+        }
+
+        .page:target ~ #home {
+            display: none;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active,
+        .page:target {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* 預設顯示首頁 */
+        #home {
+            display: block;
+        }
+
+        /* 當有其他頁面被選中時隱藏首頁 */
+        .page:target ~ #home,
+        #health-check:target ~ #home,
+        #emergency:target ~ #home,
+        #nutrition:target ~ #home,
+        #forms:target ~ #home,
+        #contact:target ~ #home {
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #4CAF50;
+            display: inline-block;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .table th,
+        .table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+        }
+
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .status-healthy {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        .status-attention {
+            color: #ff9800;
+            font-weight: 600;
+        }
+
+        .status-urgent {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .download-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+
+        .download-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-btn {
+            background: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #0056b3;
+        }
+
+        footer {
+            background: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 5px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .nav-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🏥</div>
+                <div>
+                    <h1>台北市小學學務處衛生組</h1>
+                    <p class="subtitle">健康管理 • 衛生教育 • 專業服務</p>
+                </div>
+            </div>
+        </header>
+
+        <nav>
+            <div class="nav-grid">
+                <a href="#home" class="nav-item">首頁概覽</a>
+                <a href="#health-check" class="nav-item">健康檢查管理</a>
+                <a href="#emergency" class="nav-item">緊急處理</a>
+                <a href="#nutrition" class="nav-item">營養管理</a>
+                <a href="#forms" class="nav-item">表單下載</a>
+                <a href="#contact" class="nav-item">聯絡資訊</a>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- 首頁 -->
+            <div id="home" class="page">
+                <h2 class="page-title">學務處衛生組服務概覽</h2>
+                
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">1,247</div>
+                        <div class="stat-label">在校學生總數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">98.5%</div>
+                        <div class="stat-label">健檢完成率</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">15</div>
+                        <div class="stat-label">本月處理案件</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">待追蹤個案</div>
+                    </div>
+                </div>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>🏥 健康檢查服務</h3>
+                        <p>提供學生定期健康檢查、視力檢查、口腔檢查等服務，建立完整的健康檔案管理系統。</p>
+                    </div>
+                    <div class="card">
+                        <h3>🚨 緊急醫療處理</h3>
+                        <p>處理學生在校期間的意外傷害、急性疾病，提供即時的醫療照護與家長聯繫服務。</p>
+                    </div>
+                    <div class="card">
+                        <h3>🍎 營養教育推廣</h3>
+                        <p>規劃營養教育課程、午餐管理、特殊飲食需求處理，培養學生健康飲食習慣。</p>
+                    </div>
+                    <div class="card">
+                        <h3>📋 衛生保健管理</h3>
+                        <p>校園環境衛生檢查、傳染病防治、健康促進活動規劃與執行。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 健康檢查管理 -->
+            <div id="health-check" class="page">
+                <h2 class="page-title">健康檢查管理系統</h2>
+                
+                <div class="card">
+                    <h3>學生健康檢查記錄</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>學號</th>
+                                <th>姓名</th>
+                                <th>年級班級</th>
+                                <th>檢查日期</th>
+                                <th>身高(cm)</th>
+                                <th>體重(kg)</th>
+                                <th>視力</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>110001</td>
+                                <td>王小明</td>
+                                <td>三年一班</td>
+                                <td>2024/03/15</td>
+                                <td>125</td>
+                                <td>28</td>
+                                <td>1.0/1.0</td>
+                                <td><span class="status-healthy">正常</span></td>
+                            </tr>
+                            <tr>
+                                <td>110002</td>
+                                <td>李小華</td>
+                                <td>三年一班</td>
+                                <td>2024/03/15</td>
+                                <td>120</td>
+                                <td>25</td>
+                                <td>0.8/0.9</td>
+                                <td><span class="status-attention">需追蹤</span></td>
+                            </tr>
+                            <tr>
+                                <td>110003</td>
+                                <td>張小美</td>
+                                <td>三年二班</td>
+                                <td>待檢查</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="status-urgent">未檢查</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>新增健康檢查記錄</h3>
+                    <div class="form-group">
+                        <label>學生學號</label>
+                        <input type="text" placeholder="請輸入學號">
+                    </div>
+                    <div class="form-group">
+                        <label>檢查日期</label>
+                        <input type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>身高 (cm)</label>
+                        <input type="number" placeholder="請輸入身高">
+                    </div>
+                    <div class="form-group">
+                        <label>體重 (kg)</label>
+                        <input type="number" placeholder="請輸入體重">
+                    </div>
+                    <div class="form-group">
+                        <label>視力檢查結果</label>
+                        <input type="text" placeholder="例：1.0/1.0">
+                    </div>
+                    <button class="btn" onclick="alert('記錄已儲存！')">儲存記錄</button>
+                </div>
+            </div>
+
+            <!-- 緊急處理 -->
+            <div id="emergency" class="page">
+                <h2 class="page-title">緊急處理管理</h2>
+                
+                <div class="card">
+                    <h3>緊急事件處理流程</h3>
+                    <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                        <h4 style="color: #856404;">🚨 緊急處理步驟</h4>
+                        <ol style="margin-left: 1.5rem; color: #856404;">
+                            <li>立即評估學生狀況</li>
+                            <li>提供必要的急救處理</li>
+                            <li>聯繫家長或緊急聯絡人</li>
+                            <li>必要時聯繫醫療機構</li>
+                            <li>填寫事件處理記錄</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>事件記錄表單</h3>
+                    <div class="form-group">
+                        <label>學生姓名</label>
+                        <input type="text" placeholder="請輸入學生姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>年級班級</label>
+                        <input type="text" placeholder="例：三年一班">
+                    </div>
+                    <div class="form-group">
+                        <label>事件發生時間</label>
+                        <input type="datetime-local">
+                    </div>
+                    <div class="form-group">
+                        <label>事件類型</label>
+                        <select>
+                            <option>請選擇事件類型</option>
+                            <option>外傷處理</option>
+                            <option>急性疾病</option>
+                            <option>過敏反應</option>
+                            <option>其他緊急狀況</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>事件描述</label>
+                        <textarea rows="4" placeholder="請詳細描述事件經過..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>處理措施</label>
+                        <textarea rows="3" placeholder="請描述採取的處理措施..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>家長聯繫狀況</label>
+                        <select>
+                            <option>已聯繫</option>
+                            <option>聯繫中</option>
+                            <option>無法聯繫</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="alert('緊急事件記錄已提交！')">提交記錄</button>
+                </div>
+
+                <div class="card">
+                    <h3>緊急聯絡資訊</h3>
+                    <div style="background: #d1ecf1; padding: 1rem; border-radius: 8px;">
+                        <p><strong>🏥 附近醫療機構：</strong></p>
+                        <p>台北市立聯合醫院中興院區 - (02) 2552-3234</p>
+                        <p>馬偕紀念醫院 - (02) 2543-3535</p>
+                        <br>
+                        <p><strong>🚑 緊急救護：</strong> 119</p>
+                        <p><strong>👮 校園安全：</strong> 校安中心 (02) 2720-8889</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 營養管理 -->
+            <div id="nutrition" class="page">
+                <h2 class="page-title">營養管理系統</h2>
+                
+                <div class="card">
+                    <h3>學生特殊飲食需求管理</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>學號</th>
+                                <th>姓名</th>
+                                <th>年級班級</th>
+                                <th>飲食限制</th>
+                                <th>過敏原</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>110015</td>
+                                <td>陳小宇</td>
+                                <td>二年三班</td>
+                                <td>素食</td>
+                                <td>無</td>
+                                <td><span class="status-healthy">已安排</span></td>
+                            </tr>
+                            <tr>
+                                <td>110028</td>
+                                <td>林小雅</td>
+                                <td>四年一班</td>
+                                <td>無乳糖</td>
+                                <td>牛奶</td>
+                                <td><span class="status-attention">需注意</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>本週營養午餐菜單</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>主食</th>
+                                <th>主菜</th>
+                                <th>副菜</th>
+                                <th>湯品</th>
+                                <th>水果</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>週一</td>
+                                <td>白米飯</td>
+                                <td>滷雞腿</td>
+                                <td>炒高麗菜</td>
+                                <td>蛤蜊湯</td>
+                                <td>蘋果</td>
+                            </tr>
+                            <tr>
+                                <td>週二</td>
+                                <td>胚芽米飯</td>
+                                <td>紅燒魚塊</td>
+                                <td>韭菜炒蛋</td>
+                                <td>冬瓜湯</td>
+                                <td>香蕉</td>
+                            </tr>
+                            <tr>
+                                <td>週三</td>
+                                <td>五穀飯</td>
+                                <td>咖哩豬肉</td>
+                                <td>燙青菜</td>
+                                <td>紫菜蛋花湯</td>
+                                <td>橘子</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>營養教育活動規劃</h3>
+                    <div class="form-group">
+                        <label>活動名稱</label>
+                        <input type="text" placeholder="例：健康飲食宣導週">
+                    </div>
+                    <div class="form-group">
+                        <label>活動日期</label>
+                        <input type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>參與年級</label>
+                        <select>
+                            <option>請選擇年級</option>
+                            <option>一年級</option>
+                            <option>二年級</option>
+                            <option>三年級</option>
+                            <option>四年級</option>
+                            <option>五年級</option>
+                            <option>六年級</option>
+                            <option>全校</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>活動內容</label>
+                        <textarea rows="4" placeholder="請描述活動內容與目標..."></textarea>
+                    </div>
+                    <button class="btn" onclick="alert('營養教育活動已新增！')">新增活動</button>
+                </div>
+            </div>
+
+            <!-- 表單下載 -->
+            <div id="forms" class="page">
+                <h2 class="page-title">表單下載中心</h2>
+                
+                <div class="download-section">
+                    <h3>健康管理表單</h3>
+                    <div class="download-item">
+                        <span>學生健康檢查記錄表</span>
+                        <button class="download-btn" onclick="alert('下載功能：學生健康檢查記錄表')">下載</button>
+                    </div>
+                    <div class="download-item">
+                        <span>視力檢查追蹤表</span>
+                        <button class="download-btn" onclick="alert('下載功能：視力檢查追蹤表')">下載</button>
+                    </div>
+                    <div class="download-item">
+                        <span>身高體重測量記錄表</span>
+                        <button class="download-btn" onclick="alert('下載功能：身高體重測量記錄表')">下載</button>
+                    </div>
+                </div>
+
+                <div class="download-section">
+                    <h3>緊急處理表單</h3>
+                    <div class="download-item">
+                        <span>意外事件處理記錄表</span>
+                        <button class="download-btn" onclick="alert('下載功能：意外事件處理記錄表')">下載</button>
+                    </div>
+                    <div class="download-item">
+                        <span>緊急聯絡人資料表</span>
+                        <button class="download-btn" onclick="alert('下載功能：緊急聯絡人資料表')">下載</button>
+                    </div>
+                    <div class="download-item">
+                        <span>學生就醫同意書</span>
+                        <button class="download-btn" onclick="alert('下載功能：學生就醫同意書')">下載</button>
+                    </div>
+                </div>
+
+                <div class="download-section">
+                    <h3>營養管理表單</h3>
+                    <div class="download-item">
+                        <span>特殊飲食需求申請表</span>
+                        <button class="download-btn" onclick="alert('下載功能：特殊飲食需求申請表')">下載</button>
+                    </div>
+                    <div class="download-item">
+                        <span>過敏原調查表</span>
+                        <button class="download-btn" onclick="alert('下載功能：過敏原調查表')">下載</button>
+                    </div>
+                    <div class="download-item">
+                        <span>營養午餐滿意度調查</span>
+                        <button class="download-btn" onclick="alert('下載功能：營養午餐滿意度調查')">下載</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 聯絡資訊 -->
+            <div id="contact" class="page">
+                <h2 class="page-title">聯絡資訊</h2>
+                
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>👩‍⚕️ 衛生組人員</h3>
+                        <p><strong>衛生組長：</strong>王護理師</p>
+                        <p><strong>電話：</strong>(02) 2345-6789 #201</p>
+                        <p><strong>Email：</strong>health@school.tp.edu.tw</p>
+                        <p><strong>辦公時間：</strong>週一至週五 08:00-17:00</p>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🏫 學務處聯絡資訊</h3>
+                        <p><strong>學務主任：</strong>李主任</p>
+                        <p><strong>電話：</strong>(02) 2345-6789 #200</p>
+                        <p><strong>Email：</strong>student@school.tp.edu.tw</p>
+                        <p><strong>傳真：</strong>(02) 2345-6790</p>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🚑 緊急聯絡</h3>
+                        <p><strong>校內緊急專線：</strong>(02) 2345-6789 #911</p>
+                        <p><strong>校安中心：</strong>(02) 2720-8889</p>
+                        <p><strong>教育局：</strong>(02) 2720-8889</p>
+                        <p><strong>消防局
