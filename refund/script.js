@@ -95,7 +95,7 @@ script.jsdocument.addEventListener('DOMContentLoaded', function() {
         };
 
         // **替換為您從 Google Apps Script 獲取的 Web App URL**
-        const webAppUrl = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL'; // <-- 重要：請替換這個 URL
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbwibLTDqs4kUj6cMTzqAhPDBvfafi3Sl7Xa-3bfoYe466pGgQJ0loLOB_KpSSiUBOZtIw/exec'; // <-- 重要：請替換這個 URL
 
         fetch(webAppUrl, {
             method: 'POST',
