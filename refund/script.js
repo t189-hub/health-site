@@ -63,12 +63,69 @@ script.jsdocument.addEventListener('DOMContentLoaded', function() {
     calculateRefund();
 
     // 提交表單處理 (這裡只做簡單的提示，實際應用會發送到後端)
+    document.addEventListener('DOMContentLoaded', function() {
+    // ... (其他現有程式碼) ...
+
+    const form = document.getElementById('refundForm');
+    // ... (其他現有元素獲取) ...
+
+    // ... (calculateRefund 函數及相關監聽器) ...
+
+    // 提交表單處理
     form.addEventListener('submit', function(event) {
-        event.preventDefault(); // 阻止表單預設提交行為
-        alert('退費申請已提交！(此為模擬提交，實際應用需後端處理資料)');
-        // 在實際應用中，您會在這裡發送資料到伺服器
-        // 例如：fetch('/api/submit-refund', { method: 'POST', body: new FormData(form) })
+        event.preventDefault(); // 阻止表單預設提交行為，因為我們要用 Fetch API 提交
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true; // 提交時禁用按鈕，避免重複提交
+        submitBtn.textContent = '提交中...'; // 更改按鈕文字
+
+        // 收集所有表單資料
+        const formData = {
+            classNum: document.getElementById('classNum').value,
+            gradeNum: document.getElementById('gradeNum').value,
+            studentNum: document.getElementById('studentNum').value,
+            studentName: document.getElementById('studentName').value,
+            personCount: document.getElementById('personCount').value,
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value,
+            mealCount: document.getElementById('mealCount').value, // 這是計算出的天數
+            reason: document.getElementById('reason').value,
+            finalRefundAmount: document.getElementById('finalRefundAmount').value,
+            applicationDate: document.getElementById('applicationDate').value
+        };
+
+        // **替換為您從 Google Apps Script 獲取的 Web App URL**
+        const webAppUrl = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL'; // <-- 重要：請替換這個 URL
+
+        fetch(webAppUrl, {
+            method: 'POST',
+            mode: 'no-cors', // 這是解決 CORS 問題的關鍵，但會使 fetch 的 response 成為 opaque
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData) // 將資料轉換為 JSON 字符串發送
+        })
+        .then(response => {
+            // 因為 mode: 'no-cors'，response.ok 和 response.json() 會不可用
+            // 但如果請求成功發送，Apps Script 通常會成功處理。
+            // 為了用戶體驗，我們假設請求發送後就成功了。
+            alert('退費申請已成功提交！');
+            form.reset(); // 清空表單
+            calculateRefund(); // 重新計算，確保初始值正確
+        })
+        .catch(error => {
+            console.error('提交失敗:', error);
+            alert('提交失敗，請稍後再試。');
+        })
+        .finally(() => {
+            submitBtn.disabled = false; // 恢復按鈕狀態
+            submitBtn.textContent = '提交申請';
+        });
     });
+
+    // ... (列印按鈕處理) ...
+
+});
 
     // 列印按鈕處理
     printBtn.addEventListener('click', function() {
