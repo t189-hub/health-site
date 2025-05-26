@@ -1,0 +1,180 @@
+body {
+    font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+    background-color: #f4f7f6;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* 調整為flex-start以確保內容從上方開始 */
+    padding: 20px;
+    margin: 0;
+    min-height: 100vh; /* 確保內容佔滿視窗高度 */
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px 50px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 800px; /* 增加最大寬度 */
+    width: 100%;
+    box-sizing: border-box; /* 包含內邊距在寬度計算內 */
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 28px; /* 調整標題大小 */
+}
+
+.form-section {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap; /* 允許項目換行 */
+    align-items: center; /* 垂直置中對齊 */
+}
+
+.form-section label {
+    flex: 0 0 auto; /* 不伸縮，不成長，自動寬度 */
+    width: 120px; /* 固定標籤寬度 */
+    margin-right: 10px;
+    font-weight: bold;
+    color: #555;
+    text-align: right;
+}
+
+.form-section input[type="text"],
+.form-section input[type="number"],
+.form-section input[type="date"],
+.form-section textarea {
+    flex: 1 1 auto; /* 允許伸縮和成長，佔滿剩餘空間 */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    min-width: 150px; /* 確保輸入框不會太窄 */
+}
+
+.form-section textarea {
+    resize: vertical; /* 只允許垂直調整大小 */
+    min-height: 80px;
+}
+
+.form-section span {
+    font-weight: bold;
+    color: #007bff;
+    margin: 0 5px;
+}
+
+.total-amount {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #e9f5ff;
+    border: 1px dashed #a8d7ff;
+    border-radius: 5px;
+    text-align: center; /* 文字置中 */
+    font-size: 1.1em;
+}
+
+.total-amount label {
+    width: auto; /* 重置標籤寬度 */
+    text-align: left;
+}
+
+.notes {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-left: 5px solid #007bff;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.notes p {
+    margin: 5px 0;
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.form-actions button {
+    padding: 12px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 10px;
+}
+
+#submitBtn {
+    background-color: #28a745;
+    color: white;
+}
+
+#submitBtn:hover {
+    background-color: #218838;
+}
+
+#printBtn {
+    background-color: #007bff;
+    color: white;
+}
+
+#printBtn:hover {
+    background-color: #0056b3;
+}
+
+/* 針對列印的樣式 */
+@media print {
+    body {
+        background-color: #fff;
+        padding: 0;
+        margin: 0;
+        display: block; /* 恢復預設顯示方式 */
+        min-height: auto;
+    }
+
+    .container {
+        box-shadow: none;
+        padding: 20mm; /* 適合列印的邊距 */
+        max-width: 100%;
+        border-radius: 0;
+    }
+
+    .form-actions, .notes {
+        display: none; /* 列印時隱藏按鈕和注意事項 */
+    }
+
+    /* 確保所有輸入框內容可見 */
+    input, textarea {
+        border: none !important;
+        background: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact; /* 確保背景顏色在列印時顯示 */
+        print-color-adjust: exact;
+    }
+    textarea {
+        white-space: pre-wrap; /* 保持換行 */
+        word-wrap: break-word; /* 自動換行 */
+        overflow: hidden; /* 隱藏滾動條 */
+    }
+
+    /* 為顯示簽名欄位添加空間 */
+    .signatures {
+        display: block !important; /* 顯示簽名欄位 */
+        margin-top: 50px;
+        text-align: left;
+    }
+    .signatures p {
+        display: inline-block;
+        width: 30%;
+        border-top: 1px solid #000;
+        padding-top: 5px;
+        margin-right: 3%;
+        text-align: center;
+    }
+}
