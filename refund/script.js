@@ -1,4 +1,4 @@
-script.jsdocument.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('refundForm');
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
@@ -11,7 +11,7 @@ script.jsdocument.addEventListener('DOMContentLoaded', function() {
     const finalRefundAmountInput = document.getElementById('finalRefundAmount');
     const applicationDateInput = document.getElementById('applicationDate');
     const printBtn = document.getElementById('printBtn');
-    const refundPerMeal = 65; // 每餐退費金額 [cite: 1, 2, 3]
+    const refundPerMeal = 65; // 每餐退費金額
 
     // 設定申請日期預設為今日
     const today = new Date();
@@ -62,18 +62,9 @@ script.jsdocument.addEventListener('DOMContentLoaded', function() {
     // 初始計算
     calculateRefund();
 
-    // 提交表單處理 (這裡只做簡單的提示，實際應用會發送到後端)
-    document.addEventListener('DOMContentLoaded', function() {
-    // ... (其他現有程式碼) ...
-
-    const form = document.getElementById('refundForm');
-    // ... (其他現有元素獲取) ...
-
-    // ... (calculateRefund 函數及相關監聽器) ...
-
     // 提交表單處理
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); // 阻止表單預設提交行為，因為我們要用 Fetch API 提交
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault(); // 阻止表單預設提交行為
 
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true; // 提交時禁用按鈕，避免重複提交
@@ -94,38 +85,38 @@ script.jsdocument.addEventListener('DOMContentLoaded', function() {
             applicationDate: document.getElementById('applicationDate').value
         };
 
-        // **替換為您從 Google Apps Script 獲取的 Web App URL**
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbwibLTDqs4kUj6cMTzqAhPDBvfafi3Sl7Xa-3bfoYe466pGgQJ0loLOB_KpSSiUBOZtIw/exec'; // <-- 重要：請替換這個 URL
+        // *** 重要：請替換為您從 Google Apps Script 獲取的 Web App URL ***
+        // 範例 URL: https://script.google.com/macros/s/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/exec
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbwibLTDqs4kUj6cMTzqAhPDBvfafi3Sl7Xa-3bfoYe466pGgQJ0loLOB_KpSSiUBOZtIw/exec'; 
 
-        fetch(webAppUrl, {
-            method: 'POST',
-            mode: 'no-cors', // 這是解決 CORS 問題的關鍵，但會使 fetch 的 response 成為 opaque
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData) // 將資料轉換為 JSON 字符串發送
-        })
-        .then(response => {
-            // 因為 mode: 'no-cors'，response.ok 和 response.json() 會不可用
-            // 但如果請求成功發送，Apps Script 通常會成功處理。
-            // 為了用戶體驗，我們假設請求發送後就成功了。
+        try {
+            const response = await fetch(webAppUrl, {
+                method: 'POST',
+                // mode: 'no-cors' 是解決跨域問題的常見方法，
+                // 但這會導致 fetch 的 response 成為 opaque，
+                // 意味著你無法在前端檢查 response.ok 或解析 response.json()。
+                // 對於簡單的資料提交，這通常是可接受的。
+                mode: 'no-cors', 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData) // 將資料轉換為 JSON 字符串發送
+            });
+
+            // 由於使用了 'no-cors' 模式，這裡無法直接檢查 response.ok 或解析 JSON
+            // 我們假設請求成功發送就表示資料已送達 Apps Script
             alert('退費申請已成功提交！');
             form.reset(); // 清空表單
             calculateRefund(); // 重新計算，確保初始值正確
-        })
-        .catch(error => {
+
+        } catch (error) {
             console.error('提交失敗:', error);
-            alert('提交失敗，請稍後再試。');
-        })
-        .finally(() => {
+            alert('提交失敗，請檢查網路連線或稍後再試。');
+        } finally {
             submitBtn.disabled = false; // 恢復按鈕狀態
             submitBtn.textContent = '提交申請';
-        });
+        }
     });
-
-    // ... (列印按鈕處理) ...
-
-});
 
     // 列印按鈕處理
     printBtn.addEventListener('click', function() {
