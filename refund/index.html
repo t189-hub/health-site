@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>臺北市萬華國民小學學校午餐停餐退費申請表</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>臺北市萬華國民小學學校午餐停餐退費申請表</h1>
+        <form id="refundForm">
+            <div class="form-section">
+                <label for="classNum">班級：</label>
+                <input type="number" id="classNum" name="classNum" min="1" required> 年
+                <input type="number" id="gradeNum" name="gradeNum" min="1" required> 班
+                <input type="number" id="studentNum" name="studentNum" min="1" required> 號
+            </div>
+
+            <div class="form-section">
+                <label for="studentName">姓名：</label>
+                <input type="text" id="studentName" name="studentName" required>
+            </div>
+
+            <div class="form-section">
+                <label for="personCount">人數：</label>
+                <input type="number" id="personCount" name="personCount" min="1" value="1" required> 人
+            </div>
+
+            <div class="form-section">
+                <label for="startDate">日期：</label>
+                <input type="date" id="startDate" name="startDate" required> 至
+                <input type="date" id="endDate" name="endDate" required>
+                共 <span id="daysCount">0</span> 天
+            </div>
+
+            <div class="form-section">
+                <label for="reason">退費原因說明：</label>
+                <textarea id="reason" name="reason" rows="4" required></textarea>
+                <p>原因：</p>
+            </div>
+
+            <div class="form-section total-amount">
+                <label>退費總金額 (65元 X </label>
+                <span id="displayPersonCount">1</span> 人 X
+                <span id="displayMealCount">0</span> 餐) =
+                <span id="totalRefundAmount">$ 0</span> 元
+                <input type="hidden" id="mealCount" name="mealCount" value="0">
+                <input type="hidden" id="finalRefundAmount" name="finalRefundAmount" value="0">
+            </div>
+
+            <div class="form-section">
+                <label for="applicationDate">申請退費日期：</label>
+                <input type="date" id="applicationDate" name="applicationDate" required>
+            </div>
+
+            <div class="notes">
+                <p>請於停餐3天前填具午餐停餐退費申請表。因作業緣故(食材準備)，未於3天前申請，恕不受理退費。 [cite: 1, 3]</p>
+                <p>停餐可全班性(校外教學、班級活動等)或個人(事、病、喪假或中途退餐等) [cite: 1, 3]</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" id="submitBtn">提交申請</button>
+                <button type="button" id="printBtn">列印申請表</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
