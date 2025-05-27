@@ -106,7 +106,7 @@
             color: white;
         }
 
-        /* CSS-only 頁面切換 */
+        /* CSS-only 頁面切換 - 僅保留對內部錨點的處理 */
         .page {
             display: none;
         }
@@ -120,12 +120,17 @@
             display: block;
         }
 
-        #home:not(:target) {
-            display: block;
+        /* 移除對 #health-check 和 #nutrition 的 :target 隱藏規則，因為它們將是獨立頁面 */
+        .page:target ~ #home,
+        #emergency:target ~ #home,
+        #forms:target ~ #home,
+        #contact:target ~ #home {
+            display: none;
         }
 
-        .page:target ~ #home {
-            display: none;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .main-content {
@@ -137,34 +142,9 @@
             margin-bottom: 1rem;
         }
 
-        .page {
-            display: none;
-        }
-
-        .page.active,
-        .page:target {
+        /* 確保只有當前活躍的內部頁面顯示 */
+        .page.active {
             display: block;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        /* 預設顯示首頁 */
-        #home {
-            display: block;
-        }
-
-        /* 當有其他頁面被選中時隱藏首頁 */
-        .page:target ~ #home,
-        #health-check:target ~ #home,
-        #emergency:target ~ #home,
-        #nutrition:target ~ #home,
-        #forms:target ~ #home,
-        #contact:target ~ #home {
-            display: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .page-title {
@@ -405,18 +385,16 @@
         <nav>
             <div class="nav-grid">
                 <a href="#home" class="nav-item">首頁概覽</a>
-                <a href="#health-check" class="nav-item">健康檢查管理</a>
+                <a href="health-check.html" class="nav-item">健康檢查管理</a>
                 <a href="#emergency" class="nav-item">緊急處理</a>
-                <a href="#nutrition" class="nav-item">營養管理</a>
+                <a href="nutrition-management.html" class="nav-item">營養管理</a>
                 <a href="#forms" class="nav-item">表單下載</a>
                 <a href="#contact" class="nav-item">聯絡資訊</a>
             </div>
         </nav>
 
         <div class="main-content">
-            <!-- 首頁 -->
-            <div id="home" class="page">
-                <h2 class="page-title">學務處衛生組服務概覽</h2>
+            <div id="home" class="page active"> <h2 class="page-title">學務處衛生組服務概覽</h2>
                 
                 <div class="quick-stats">
                     <div class="stat-card">
@@ -457,10 +435,9 @@
                 </div>
             </div>
 
-            <!-- 健康檢查管理 -->
+            <!--
             <div id="health-check" class="page">
                 <h2 class="page-title">健康檢查管理系統</h2>
-                
                 <div class="card">
                     <h3>學生健康檢查記錄</h3>
                     <table class="table">
@@ -514,39 +491,32 @@
                 <div class="card">
                     <h3>新增健康檢查記錄</h3>
                      <form
-    action="https://script.google.com/macros/s/AKfycby6PIq44jYeknd3XE1Gol_3mDfQItTxXyufuHLiFyGZF3cKjZLUQTLk78ZH0hG4vzQ57A/exec"
+    id="healthForm" action="https://script.google.com/macros/s/AKfycby6PIq44jYeknd3XE1Gol_3mDfQItTxXyufuHLiFyGZF3cKjZLUQTLk78ZH0hG4vzQ57A/exec"
     method="post"
   >
   <div class="form-group">
     <label>學生學號</label>
-    <!-- 新增 name 屬性 -->
     <input type="text" name="studentId" placeholder="請輸入學號" required>
   </div>
   <div class="form-group">
     <label>檢查日期</label>
-    <!-- 新增 name 屬性 -->
     <input type="date" name="checkDate" required>
   </div>
   <div class="form-group">
     <label>身高 (cm)</label>
-    <!-- 新增 name 屬性 -->
     <input type="number" name="height" placeholder="請輸入身高" required>
   </div>
   <div class="form-group">
     <label>體重 (kg)</label>
-    <!-- 新增 name 屬性 -->
     <input type="number" name="weight" placeholder="請輸入體重" required>
   </div>
   <div class="form-group">
     <label>視力檢查結果</label>
-    <!-- 新增 name 屬性 -->
     <input type="text" name="vision" placeholder="例：1.0/1.0" required>
   </div>
-  <!-- 修改按鈕類型並新增提交事件 -->
   <button type="submit" class="btn">儲存記錄</button>
 </form>
 
-<!-- 新增 JavaScript 處理表單提交 -->
 <script>
   document.getElementById('healthForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -558,16 +528,18 @@
       }
     })
     .then(response => {
-      if (response.ok) {
-        alert('記錄已儲存！');
-        this.reset();
-      }
+      alert('記錄已儲存！');
+      this.reset();
     })
-    .catch(error => alert('儲存失敗！'));
+    .catch(error => {
+        console.error('儲存失敗！', error);
+        alert('儲存失敗！請檢查網路連線或 Apps Script 設定。');
+    });
   });
 </script>
+            </div>
+            -->
 
-            <!-- 緊急處理 -->
             <div id="emergency" class="page">
                 <h2 class="page-title">緊急處理管理</h2>
                 
@@ -641,7 +613,7 @@
                 </div>
             </div>
 
-            <!-- 營養管理 -->
+            <!--
             <div id="nutrition" class="page">
                 <h2 class="page-title">營養管理系統</h2>
                 
@@ -751,8 +723,8 @@
                     <button class="btn" onclick="alert('營養教育活動已新增！')">新增活動</button>
                 </div>
             </div>
+            -->
 
-            <!-- 表單下載 -->
             <div id="forms" class="page">
                 <h2 class="page-title">表單下載中心</h2>
                 
@@ -805,7 +777,6 @@
                 </div>
             </div>
 
-            <!-- 聯絡資訊 -->
             <div id="contact" class="page">
                 <h2 class="page-title">聯絡資訊</h2>
                 
@@ -829,7 +800,18 @@
                     
                     <div class="card">
                         <h3>🚑 緊急聯絡</h3>
-                        <p><strong>校內緊急專線：</strong>(02) 2345-6789 #911</p>
+                        <p><strong>校內緊急專線：</strong>(02) 23037654-211</p>
                         <p><strong>校安中心：</strong></p>
                         <p><strong>教育局：</strong>(02) 2720-8889</p>
-                        <p><strong>消防局
+                        <p><strong>消防局</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2024 萬大國民小學學務處衛生組. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
