@@ -1,0 +1,80 @@
+ <div id="health-check" class="page">
+                <h2 class="page-title">健康檢查管理系統</h2>
+                <div class="card">
+                    <h3>學生健康檢查記錄</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>學號</th>
+                                <th>姓名</th>
+                                <th>年級班級</th>
+                                <th>檢查日期</th>
+                                <th>身高(cm)</th>
+                                <th>體重(kg)</th>
+                                <th>視力</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>110001</td>
+                                <td>王小明</td>
+                                <td>三年一班</td>
+                                <td>2024/03/15</td>
+                                <td>125</td>
+                                <td>28</td>
+                                <td>1.0/1.0</td>
+                                <td><span class="status-healthy">正常</span></td>
+                            </tr>
+                            <tr>
+                                <td>110002</td>
+                                <td>李小華</td>
+                                <td>三年一班</td>
+                                <td>2024/03/15</td>
+                                <td>120</td>
+                                <td>25</td>
+                                <td>0.8/0.9</td>
+                                <td><span class="status-attention">需追蹤</span></td>
+                            </tr>
+                            <tr>
+                                <td>110003</td>
+                                <td>張小美</td>
+                                <td>三年二班</td>
+                                <td>待檢查</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="status-urgent">未檢查</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>新增健康檢查記錄</h3>
+                     <form
+    id="healthForm" action="https://script.google.com/macros/s/AKfycby6PIq44jYeknd3XE1Gol_3mDfQItTxXyufuHLiFyGZF3cKjZLUQTLk78ZH0hG4vzQ57A/exec"
+    method="post"
+  >
+  <div class="form-group">
+    <label>學生學號</label>
+    <input type="text" name="studentId" placeholder="請輸入學號" required>
+  </div>
+  <div class="form-group">
+    <label>檢查日期</label>
+    <input type="date" name="checkDate" required>
+  </div>
+  <div class="form-group">
+    <label>身高 (cm)</label>
+    <input type="number" name="height" placeholder="請輸入身高" required>
+  </div>
+  <div class="form-group">
+    <label>體重 (kg)</label>
+    <input type="number" name="weight" placeholder="請輸入體重" required>
+  </div>
+  <div class="form-group">
+    <label>視力檢查結果</label>
+    <input type="text" name="vision" placeholder="例：1.0/1.0" required>
+  </div>
+  <button type="submit" class="btn">儲存記錄</button>
+</form>
