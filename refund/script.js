@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // *** 重要：請替換為您從 Google Apps Script 獲取的 Web App URL ***
         // 範例 URL: https://script.google.com/macros/s/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/exec
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbzt5DhNSOnQogkqjtE7EHfcXD1mrpIPx4TspXyJwTdpMGJyeFjBei1KH1zd0wyCXHYQ2w/exec'; 
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyKo6G4P8ijB4fkK1knjd_ShnJO87Mf1UqOTyic18RTmcihjbV5sFylFIohUx7JMVMmrg/exec'; 
 
         try {
             const response = await fetch(webAppUrl, {
