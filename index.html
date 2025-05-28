@@ -1,817 +1,839 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台北市萬華區萬大國民小學學務處衛生組 - 行政服務網站</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 
-        body {
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: transparent;
-            margin: 0;
-            padding: 0;
-        }
+// Global variables provided by the Canvas environment
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        .container {
-            max-width: 100%;
-            margin: 0;
-            padding: 10px;
-        }
+// Component for the printable suspension form
+const PrintableSuspensionForm = React.forwardRef(({ data }, ref) => {
+    if (!data) return null;
 
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1.5rem 1rem;
-            text-align: center;
-            border-radius: 15px;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 1rem;
-        }
-
-        .logo-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            color: white;
-        }
-
-        h1 {
-            color: #2c3e50;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 1.2rem;
-            font-weight: 300;
-        }
-
-        nav {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 1rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-        }
-
-        .nav-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.8rem;
-        }
-
-        .nav-item {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 1rem;
-            font-weight: 500;
-            text-decoration: none;
-            display: block;
-        }
-
-        .nav-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            background: linear-gradient(135deg, #764ba2, #667eea);
-            color: white;
-        }
-
-        /* CSS-only 頁面切換 - 僅保留對內部錨點的處理 */
-        .page {
-            display: none;
-        }
-
-        .page:target {
-            display: block;
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        #home {
-            display: block;
-        }
-
-        /* 移除對 #health-check 和 #nutrition 的 :target 隱藏規則，因為它們將是獨立頁面 */
-        .page:target ~ #home,
-        #emergency:target ~ #home,
-        #forms:target ~ #home,
-        #contact:target ~ #home {
-            display: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .main-content {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-            margin-bottom: 1rem;
-        }
-
-        /* 確保只有當前活躍的內部頁面顯示 */
-        .page.active {
-            display: block;
-        }
-
-        .page-title {
-            color: #2c3e50;
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 3px solid #4CAF50;
-            display: inline-block;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card h3 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .table th,
-        .table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .table th {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            font-weight: 600;
-        }
-
-        .table tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        .status-healthy {
-            color: #4CAF50;
-            font-weight: 600;
-        }
-
-        .status-attention {
-            color: #ff9800;
-            font-weight: 600;
-        }
-
-        .status-urgent {
-            color: #f44336;
-            font-weight: 600;
-        }
-
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        .download-section {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin: 1rem 0;
-        }
-
-        .download-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: white;
-            margin: 0.5rem 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .download-btn {
-            background: #007bff;
-            color: white;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .download-btn:hover {
-            background: #0056b3;
-        }
-
-        footer {
-            background: rgba(255, 255, 255, 0.9);
-            text-align: center;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-top: 1rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 5px;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .nav-grid {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-
-            .card-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .quick-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .page-title {
-                font-size: 1.5rem;
-            }
-            
-            .main-content {
-                padding: 1rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <div class="logo-icon">🏥</div>
-                <div>
-                    <h1>萬大國民小學學務處衛生組</h1>
-                    <p class="subtitle">健康管理 • 衛生教育 • 專業服務</p>
-                </div>
-            </div>
-        </header>
-
-        <nav>
-            <div class="nav-grid">
-                <a href="#home" class="nav-item">首頁概覽</a>
-                <a href="health-check.html" class="nav-item">健康檢查管理</a>
-                <a href="#emergency" class="nav-item">緊急處理</a>
-                <a href="nutrition-management.html" class="nav-item">營養管理</a>
-                <a href="#forms" class="nav-item">表單下載</a>
-                <a href="#contact" class="nav-item">聯絡資訊</a>
-            </div>
-        </nav>
-
-        <div class="main-content">
-            <div id="home" class="page active"> <h2 class="page-title">學務處衛生組服務概覽</h2>
-                
-                <div class="quick-stats">
-                    <div class="stat-card">
-                        <div class="stat-number">611</div>
-                        <div class="stat-label">在校學生總數</div>
+    return (
+        <div ref={ref} className="printable-content p-8" style={{ display: 'none' }}>
+            {/* First Copy */}
+            <div className="mb-12 border-b-2 border-dashed pb-8">
+                <h2 className="text-2xl font-bold text-center mb-4">學童午餐停餐申請表 (學校留存聯)</h2>
+                <div className="grid grid-cols-2 gap-4 text-lg">
+                    <div><span className="font-semibold">年級:</span> {data.grade}</div>
+                    <div><span className="font-semibold">班級:</span> {data.class}</div>
+                    <div><span className="font-semibold">座號:</span> {data.studentId}</div>
+                    <div><span className="font-semibold">停餐人數:</span> {data.numberOfStudents} 人</div>
+                    <div className="col-span-2">
+                        <span className="font-semibold">學童姓名:</span> {data.studentNames?.filter(name => name).join(', ')}
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">100%</div>
-                        <div class="stat-label">健檢完成率</div>
+                    <div className="col-span-2">
+                        <span className="font-semibold">停餐日期:</span> {data.startDate} 到 {data.endDate}
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">o</div>
-                        <div class="stat-label">本月處理案件</div>
+                    <div className="col-span-2">
+                        <span className="font-semibold">實際停餐天數:</span> {data.actualSuspensionDays} 天
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">5</div>
-                        <div class="stat-label">待追蹤個案</div>
+                    <div className="col-span-2">
+                        <span className="font-semibold">退費金額:</span> {data.refundAmount} 元
                     </div>
-                </div>
-
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>🏥 健康檢查服務</h3>
-                        <p>提供學生定期健康檢查、視力檢查、口腔檢查等服務，建立完整的健康檔案管理系統。</p>
+                    <div className="col-span-2">
+                        <span className="font-semibold">停餐原因:</span> {data.reason}
                     </div>
-                    <div class="card">
-                        <h3>🚨 緊急醫療處理</h3>
-                        <p>處理學生在校期間的意外傷害、急性疾病，提供即時的醫療照護與家長聯繫服務。</p>
-                    </div>
-                    <div class="card">
-                        <h3>🍎 營養教育推廣</h3>
-                        <p>規劃營養教育課程、午餐管理、特殊飲食需求處理，培養學生健康飲食習慣。</p>
-                    </div>
-                    <div class="card">
-                        <h3>📋 衛生保健管理</h3>
-                        <p>校園環境衛生檢查、傳染病防治、健康促進活動規劃與執行。</p>
+                    <div className="col-span-2 mt-4 text-right text-sm text-gray-600">
+                        申請日期: {new Date(data.timestamp?.toDate()).toLocaleDateString()}
                     </div>
                 </div>
             </div>
 
-            <!--
-            <div id="health-check" class="page">
-                <h2 class="page-title">健康檢查管理系統</h2>
-                <div class="card">
-                    <h3>學生健康檢查記錄</h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>學號</th>
-                                <th>姓名</th>
-                                <th>年級班級</th>
-                                <th>檢查日期</th>
-                                <th>身高(cm)</th>
-                                <th>體重(kg)</th>
-                                <th>視力</th>
-                                <th>狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>110001</td>
-                                <td>王小明</td>
-                                <td>三年一班</td>
-                                <td>2024/03/15</td>
-                                <td>125</td>
-                                <td>28</td>
-                                <td>1.0/1.0</td>
-                                <td><span class="status-healthy">正常</span></td>
-                            </tr>
-                            <tr>
-                                <td>110002</td>
-                                <td>李小華</td>
-                                <td>三年一班</td>
-                                <td>2024/03/15</td>
-                                <td>120</td>
-                                <td>25</td>
-                                <td>0.8/0.9</td>
-                                <td><span class="status-attention">需追蹤</span></td>
-                            </tr>
-                            <tr>
-                                <td>110003</td>
-                                <td>張小美</td>
-                                <td>三年二班</td>
-                                <td>待檢查</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td><span class="status-urgent">未檢查</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <h3>新增健康檢查記錄</h3>
-                     <form
-    id="healthForm" action="https://script.google.com/macros/s/AKfycby6PIq44jYeknd3XE1Gol_3mDfQItTxXyufuHLiFyGZF3cKjZLUQTLk78ZH0hG4vzQ57A/exec"
-    method="post"
-  >
-  <div class="form-group">
-    <label>學生學號</label>
-    <input type="text" name="studentId" placeholder="請輸入學號" required>
-  </div>
-  <div class="form-group">
-    <label>檢查日期</label>
-    <input type="date" name="checkDate" required>
-  </div>
-  <div class="form-group">
-    <label>身高 (cm)</label>
-    <input type="number" name="height" placeholder="請輸入身高" required>
-  </div>
-  <div class="form-group">
-    <label>體重 (kg)</label>
-    <input type="number" name="weight" placeholder="請輸入體重" required>
-  </div>
-  <div class="form-group">
-    <label>視力檢查結果</label>
-    <input type="text" name="vision" placeholder="例：1.0/1.0" required>
-  </div>
-  <button type="submit" class="btn">儲存記錄</button>
-</form>
-
-<script>
-  document.getElementById('healthForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    fetch(this.action, {
-      method: 'POST',
-      body: new URLSearchParams(new FormData(this)),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    })
-    .then(response => {
-      alert('記錄已儲存！');
-      this.reset();
-    })
-    .catch(error => {
-        console.error('儲存失敗！', error);
-        alert('儲存失敗！請檢查網路連線或 Apps Script 設定。');
-    });
-  });
-</script>
-            </div>
-            -->
-
-            <div id="emergency" class="page">
-                <h2 class="page-title">緊急處理管理</h2>
-                
-                <div class="card">
-                    <h3>緊急事件處理流程</h3>
-                    <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
-                        <h4 style="color: #856404;">🚨 緊急處理步驟</h4>
-                        <ol style="margin-left: 1.5rem; color: #856404;">
-                            <li>立即評估學生狀況</li>
-                            <li>提供必要的急救處理</li>
-                            <li>聯繫家長或緊急聯絡人</li>
-                            <li>必要時聯繫醫療機構</li>
-                            <li>填寫事件處理記錄</li>
-                        </ol>
+            {/* Second Copy */}
+            <div>
+                <h2 className="text-2xl font-bold text-center mb-4">學童午餐停餐申請表 (家長留存聯)</h2>
+                <div className="grid grid-cols-2 gap-4 text-lg">
+                    <div><span className="font-semibold">年級:</span> {data.grade}</div>
+                    <div><span className="font-semibold">班級:</span> {data.class}</div>
+                    <div><span className="font-semibold">座號:</span> {data.studentId}</div>
+                    <div><span className="font-semibold">停餐人數:</span> {data.numberOfStudents} 人</div>
+                    <div className="col-span-2">
+                        <span className="font-semibold">學童姓名:</span> {data.studentNames?.filter(name => name).join(', ')}
                     </div>
-                </div>
-
-                <div class="card">
-                    <h3>事件記錄表單</h3>
-                    <div class="form-group">
-                        <label>學生姓名</label>
-                        <input type="text" placeholder="請輸入學生姓名">
+                    <div className="col-span-2">
+                        <span className="font-semibold">停餐日期:</span> {data.startDate} 到 {data.endDate}
                     </div>
-                    <div class="form-group">
-                        <label>年級班級</label>
-                        <input type="text" placeholder="例：三年一班">
+                    <div className="col-span-2">
+                        <span className="font-semibold">實際停餐天數:</span> {data.actualSuspensionDays} 天
                     </div>
-                    <div class="form-group">
-                        <label>事件發生時間</label>
-                        <input type="datetime-local">
+                    <div className="col-span-2">
+                        <span className="font-semibold">退費金額:</span> {data.refundAmount} 元
                     </div>
-                    <div class="form-group">
-                        <label>事件類型</label>
-                        <select>
-                            <option>請選擇事件類型</option>
-                            <option>外傷處理</option>
-                            <option>急性疾病</option>
-                            <option>過敏反應</option>
-                            <option>其他緊急狀況</option>
-                        </select>
+                    <div className="col-span-2">
+                        <span className="font-semibold">停餐原因:</span> {data.reason}
                     </div>
-                    <div class="form-group">
-                        <label>事件描述</label>
-                        <textarea rows="4" placeholder="請詳細描述事件經過..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>處理措施</label>
-                        <textarea rows="3" placeholder="請描述採取的處理措施..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>家長聯繫狀況</label>
-                        <select>
-                            <option>已聯繫</option>
-                            <option>聯繫中</option>
-                            <option>無法聯繫</option>
-                        </select>
-                    </div>
-                    <button class="btn" onclick="alert('緊急事件記錄已提交！')">提交記錄</button>
-                </div>
-
-                <div class="card">
-                    <h3>緊急聯絡資訊</h3>
-                    <div style="background: #d1ecf1; padding: 1rem; border-radius: 8px;">
-                        <p><strong>🏥 附近醫療機構：</strong></p>
-                        <p>台北市立聯合醫院中興院區 - (02) 2552-3234</p>
-                        <p>馬偕紀念醫院 - (02) 2543-3535</p>
-                        <br>
-                        <p><strong>🚑 緊急救護：</strong> 119</p>
-                        <p><strong>👮 校園安全：</strong> 校安中心  </p>
-                    </div>
-                </div>
-            </div>
-
-            <!--
-            <div id="nutrition" class="page">
-                <h2 class="page-title">營養管理系統</h2>
-                
-                <div class="card">
-                    <h3>學生特殊飲食需求管理</h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>學號</th>
-                                <th>姓名</th>
-                                <th>年級班級</th>
-                                <th>飲食限制</th>
-                                <th>過敏原</th>
-                                <th>狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>110015</td>
-                                <td>陳小宇</td>
-                                <td>二年三班</td>
-                                <td>素食</td>
-                                <td>無</td>
-                                <td><span class="status-healthy">已安排</span></td>
-                            </tr>
-                            <tr>
-                                <td>110028</td>
-                                <td>林小雅</td>
-                                <td>四年一班</td>
-                                <td>無乳糖</td>
-                                <td>牛奶</td>
-                                <td><span class="status-attention">需注意</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <h3>本週營養午餐菜單</h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>日期</th>
-                                <th>主食</th>
-                                <th>主菜</th>
-                                <th>副菜</th>
-                                <th>湯品</th>
-                                <th>水果</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>週一</td>
-                                <td>白米飯</td>
-                                <td>滷雞腿</td>
-                                <td>炒高麗菜</td>
-                                <td>蛤蜊湯</td>
-                                <td>蘋果</td>
-                            </tr>
-                            <tr>
-                                <td>週二</td>
-                                <td>胚芽米飯</td>
-                                <td>紅燒魚塊</td>
-                                <td>韭菜炒蛋</td>
-                                <td>冬瓜湯</td>
-                                <td>香蕉</td>
-                            </tr>
-                            <tr>
-                                <td>週三</td>
-                                <td>五穀飯</td>
-                                <td>咖哩豬肉</td>
-                                <td>燙青菜</td>
-                                <td>紫菜蛋花湯</td>
-                                <td>橘子</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <h3>營養教育活動規劃</h3>
-                    <div class="form-group">
-                        <label>活動名稱</label>
-                        <input type="text" placeholder="例：健康飲食宣導週">
-                    </div>
-                    <div class="form-group">
-                        <label>活動日期</label>
-                        <input type="date">
-                    </div>
-                    <div class="form-group">
-                        <label>參與年級</label>
-                        <select>
-                            <option>請選擇年級</option>
-                            <option>一年級</option>
-                            <option>二年級</option>
-                            <option>三年級</option>
-                            <option>四年級</option>
-                            <option>五年級</option>
-                            <option>六年級</option>
-                            <option>全校</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>活動內容</label>
-                        <textarea rows="4" placeholder="請描述活動內容與目標..."></textarea>
-                    </div>
-                    <button class="btn" onclick="alert('營養教育活動已新增！')">新增活動</button>
-                </div>
-            </div>
-            -->
-
-            <div id="forms" class="page">
-                <h2 class="page-title">表單下載中心</h2>
-                
-                <div class="download-section">
-                    <h3>健康管理表單</h3>
-                    <div class="download-item">
-                        <span>學生健康檢查記錄表</span>
-                        <button class="download-btn" onclick="alert('下載功能：學生健康檢查記錄表')">下載</button>
-                    </div>
-                    <div class="download-item">
-                        <span>視力檢查追蹤表</span>
-                        <button class="download-btn" onclick="alert('下載功能：視力檢查追蹤表')">下載</button>
-                    </div>
-                    <div class="download-item">
-                        <span>身高體重測量記錄表</span>
-                        <button class="download-btn" onclick="alert('下載功能：身高體重測量記錄表')">下載</button>
-                    </div>
-                </div>
-
-                <div class="download-section">
-                    <h3>緊急處理表單</h3>
-                    <div class="download-item">
-                        <span>意外事件處理記錄表</span>
-                        <button class="download-btn" onclick="alert('下載功能：意外事件處理記錄表')">下載</button>
-                    </div>
-                    <div class="download-item">
-                        <span>緊急聯絡人資料表</span>
-                        <button class="download-btn" onclick="alert('下載功能：緊急聯絡人資料表')">下載</button>
-                    </div>
-                    <div class="download-item">
-                        <span>學生就醫同意書</span>
-                        <button class="download-btn" onclick="alert('下載功能：學生就醫同意書')">下載</button>
-                    </div>
-                </div>
-
-                <div class="download-section">
-                    <h3>營養管理表單</h3>
-                    <div class="download-item">
-                        <span>特殊飲食需求申請表</span>
-                        <button class="download-btn" onclick="alert('下載功能：特殊飲食需求申請表')">下載</button>
-                    </div>
-                    <div class="download-item">
-                        <span>過敏原調查表</span>
-                        <button class="download-btn" onclick="alert('下載功能：過敏原調查表')">下載</button>
-                    </div>
-                    <div class="download-item">
-                        <span>營養午餐滿意度調查</span>
-                        <button class="download-btn" onclick="alert('下載功能：營養午餐滿意度調查')">下載</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="contact" class="page">
-                <h2 class="page-title">聯絡資訊</h2>
-                
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>👩‍⚕️ 衛生組人員</h3>
-                        <p><strong>衛生組長：張組長</strong></p>
-                        <p><strong>陳護理師</strong>(02) 2303-7654 #217</p>
-                        <p><strong>電話：</strong>(02) 2303-7654 #216</p>
-                        <p><strong>Email：</strong> t189@wtps.tp.edu.tw</p>
-                        <p><strong>辦公時間：</strong>週一至週五 08:00-17:00</p>
-                    </div>
-                    
-                    <div class="card">
-                        <h3>🏫 學務處聯絡資訊</h3>
-                        <p><strong>學務主任：</strong>呂主任</p>
-                        <p><strong>電話：</strong>(02) 2303-7654 #216</p>
-                        <p><strong>Email：</strong>student@wtps.tp.edu.tw</p>
-                        <p><strong>傳真：</strong>(02) 2303-7654 #216</p>
-                    </div>
-                    
-                    <div class="card">
-                        <h3>🚑 緊急聯絡</h3>
-                        <p><strong>校內緊急專線：</strong>(02) 23037654-211</p>
-                        <p><strong>校安中心：</strong></p>
-                        <p><strong>教育局：</strong>(02) 2720-8889</p>
-                        <p><strong>消防局</strong></p>
+                    <div className="col-span-2 mt-4 text-right text-sm text-gray-600">
+                        申請日期: {new Date(data.timestamp?.toDate()).toLocaleDateString()}
                     </div>
                 </div>
             </div>
         </div>
+    );
+});
 
-        <footer>
-            <p>&copy; 2024 萬大國民小學學務處衛生組. All rights reserved.</p>
-        </footer>
-    </div>
-</body>
-</html>
+function App() {
+    // State for Firebase instances and user ID
+    const [db, setDb] = useState(null);
+    const [auth, setAuth] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [isAuthReady, setIsAuthReady] = useState(false);
+
+    // State for navigation
+    const [currentPage, setCurrentPage] = useState('order'); // 'order', 'suspension', 'health', 'documents'
+
+    // State for form data (example for order form)
+    const [orderForm, setOrderForm] = useState({
+        grade: '',
+        class: '',
+        studentId: '',
+        studentName: '',
+        parentName: '',
+        isOrdering: 'yes', // 'yes' or 'no'
+        diet: 'meat', // 'meat' or 'vegetarian'
+        milkDay: 'milk', // 'milk' or 'fruit'
+    });
+
+    // State for suspension form data
+    const [suspensionForm, setSuspensionForm] = useState({
+        grade: '',
+        class: '',
+        studentId: '',
+        numberOfStudents: '1', // Changed to string for select value
+        studentNames: [''], // Initialize with one empty string for 1 student
+        startDate: '',
+        endDate: '',
+        reason: '',
+        refundAmount: 0, // Calculated refund amount
+    });
+
+    // State for health report form data
+    const [healthForm, setHealthForm] = useState({
+        height: '',
+        weight: '',
+        visionLeft: '',
+        visionRight: '',
+    });
+
+    // State for displaying submitted data
+    const [submittedOrders, setSubmittedOrders] = useState([]);
+    const [submittedSuspensions, setSubmittedSuspensions] = useState([]);
+    const [submittedHealthReports, setSubmittedHealthReports] = useState([]);
+
+    // State for print functionality
+    const [printData, setPrintData] = useState(null);
+    const printableRef = useRef();
+
+    // Calculate the minimum allowed start date (today + 3 working days excluding holidays)
+    const [minAllowedStartDate, setMinAllowedStartDate] = useState('');
+
+    useEffect(() => {
+        const calculateMinDate = () => {
+            let date = new Date();
+            let workingDaysCount = 0;
+            // Iterate until 3 working days are found
+            while (workingDaysCount < 3) {
+                date.setDate(date.getDate() + 1); // Move to next day
+                const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+                const currentMonth = date.getMonth(); // 0-indexed
+                const currentDay = date.getDate();
+
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                // Summer Vacation: July 1st to August 20th (months 6 and 7)
+                const isSummerVacation = (currentMonth === 6 && currentDay >= 1) || (currentMonth === 7 && currentDay <= 20);
+                // Winter Vacation: January 20th to February 20th (months 0 and 1)
+                const isWinterVacation = (currentMonth === 0 && currentDay >= 20) || (currentMonth === 1 && currentDay <= 20);
+
+                if (!isWeekend && !isSummerVacation && !isWinterVacation) {
+                    workingDaysCount++;
+                }
+            }
+            // Format to YYYY-MM-DD
+            setMinAllowedStartDate(date.toISOString().split('T')[0]);
+        };
+        calculateMinDate();
+    }, []);
+
+
+    // Initialize Firebase and set up auth listener
+    useEffect(() => {
+        const app = initializeApp(firebaseConfig);
+        const firestoreDb = getFirestore(app);
+        const firebaseAuth = getAuth(app);
+
+        setDb(firestoreDb);
+        setAuth(firebaseAuth);
+
+        const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+            if (user) {
+                setUserId(user.uid);
+            } else {
+                // Sign in anonymously if no initial token or user is not authenticated
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(firebaseAuth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(firebaseAuth);
+                    }
+                    setUserId(firebaseAuth.currentUser?.uid || crypto.randomUUID()); // Fallback to random UUID if auth.currentUser is null
+                } catch (error) {
+                    console.error("Firebase authentication failed:", error);
+                    setUserId(crypto.randomUUID()); // Use a random UUID if anonymous sign-in fails
+                }
+            }
+            setIsAuthReady(true);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Fetch data when auth is ready and userId is set
+    useEffect(() => {
+        if (isAuthReady && db && userId) {
+            // Fetch lunch orders
+            const ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/lunchOrders`);
+            const unsubscribeOrders = onSnapshot(ordersCollectionRef, (snapshot) => {
+                const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setSubmittedOrders(ordersData);
+            }, (error) => {
+                console.error("Error fetching lunch orders:", error);
+            });
+
+            // Fetch lunch suspensions
+            const suspensionsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/lunchSuspensions`);
+            const unsubscribeSuspensions = onSnapshot(suspensionsCollectionRef, (snapshot) => {
+                const suspensionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setSubmittedSuspensions(suspensionsData);
+            }, (error) => {
+                console.error("Error fetching lunch suspensions:", error);
+            });
+
+            // Fetch health reports
+            const healthReportsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/healthReports`);
+            const unsubscribeHealthReports = onSnapshot(healthReportsCollectionRef, (snapshot) => {
+                const healthData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setSubmittedHealthReports(healthData);
+            }, (error) => {
+                console.error("Error fetching health reports:", error);
+            });
+
+            return () => {
+                unsubscribeOrders();
+                unsubscribeSuspensions();
+                unsubscribeHealthReports();
+            };
+        }
+    }, [isAuthReady, db, userId]);
+
+    // Handle form input changes
+    const handleOrderFormChange = (e) => {
+        const { name, value } = e.target;
+        setOrderForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSuspensionFormChange = (e) => {
+        const { name, value } = e.target;
+        setSuspensionForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleNumberOfStudentsChange = (e) => {
+        const num = parseInt(e.target.value) || 1; // Parse to int, default to 1
+        setSuspensionForm(prev => ({
+            ...prev,
+            numberOfStudents: String(num), // Store as string for select
+            studentNames: Array(num).fill('').map((_, i) => prev.studentNames[i] || ''), // Preserve existing names
+        }));
+    };
+
+    const handleStudentNameChange = (index, value) => {
+        const newNames = [...suspensionForm.studentNames];
+        newNames[index] = value;
+        setSuspensionForm(prev => ({ ...prev, studentNames: newNames }));
+    };
+
+    const handleHealthFormChange = (e) => {
+        const { name, value } = e.target;
+        setHealthForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Handle form submissions
+    const handleOrderSubmit = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) {
+            console.error("Firestore or User ID not available.");
+            return;
+        }
+        try {
+            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/lunchOrders`), {
+                ...orderForm,
+                timestamp: new Date(),
+            });
+            alertMessage("午餐意願調查表已成功送出！");
+            // Reset form
+            setOrderForm({
+                grade: '', class: '', studentId: '', studentName: '', parentName: '',
+                isOrdering: 'yes', diet: 'meat', milkDay: 'milk',
+            });
+        } catch (e) {
+            console.error("新增午餐意願調查表時發生錯誤: ", e);
+            alertMessage("送出失敗，請重試。");
+        }
+    };
+
+    const handleSuspensionSubmit = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) {
+            console.error("Firestore or User ID not available.");
+            return;
+        }
+
+        const startDate = new Date(suspensionForm.startDate);
+        const endDate = new Date(suspensionForm.endDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+
+        // Date validation: start date must be at least 3 working days from now
+        const minAllowedDateObj = new Date(minAllowedStartDate);
+        if (startDate < minAllowedDateObj) {
+            alertMessage(`停餐開始日期必須在 ${minAllowedStartDate} 或之後 (需提前3個工作天申請)。`);
+            return;
+        }
+
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
+            alertMessage("請輸入有效的停餐日期範圍。");
+            return;
+        }
+
+        let actualSuspensionDays = 0;
+        const lunchPricePerDay = 65; // 65元/餐
+
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+            const currentMonth = currentDate.getMonth(); // 0-indexed
+            const currentDay = currentDate.getDate();
+
+            // Check for weekends
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+            // Check for Summer Vacation (July 1st to August 20th)
+            const isSummerVacation = (currentMonth === 6 && currentDay >= 1) || // July (Month 6) 1st onwards
+                                     (currentMonth === 7 && currentDay <= 20); // August (Month 7) 20th or earlier
+
+            // Check for Winter Vacation (January 20th to February 20th)
+            const isWinterVacation = (currentMonth === 0 && currentDay >= 20) || // January (Month 0) 20th onwards
+                                     (currentMonth === 1 && currentDay <= 20); // February (Month 1) 20th or earlier
+
+            if (!isWeekend && !isSummerVacation && !isWinterVacation) {
+                actualSuspensionDays++;
+            }
+            currentDate.setDate(currentDate.getDate() + 1); // Move to next day
+        }
+
+        const numStudents = parseInt(suspensionForm.numberOfStudents);
+        const calculatedRefundAmount = actualSuspensionDays * numStudents * lunchPricePerDay;
+
+        try {
+            const docRef = await addDoc(collection(db, `artifacts/${appId}/users/${userId}/lunchSuspensions`), {
+                ...suspensionForm,
+                actualSuspensionDays: actualSuspensionDays,
+                refundAmount: calculatedRefundAmount,
+                timestamp: new Date(),
+                // Filter out empty student names before saving
+                studentNames: suspensionForm.studentNames.slice(0, numStudents).filter(name => name.trim() !== ''),
+            });
+            alertMessage(`午餐停餐申請表已成功送出！預計停餐 ${actualSuspensionDays} 天，退費金額 ${calculatedRefundAmount} 元。`);
+
+            // Set data for printing the just submitted form
+            setPrintData({
+                ...suspensionForm,
+                actualSuspensionDays: actualSuspensionDays,
+                refundAmount: calculatedRefundAmount,
+                timestamp: new Date(),
+                studentNames: suspensionForm.studentNames.slice(0, numStudents).filter(name => name.trim() !== ''),
+            });
+
+            // Reset form
+            setSuspensionForm({
+                grade: '', class: '', studentId: '', numberOfStudents: '1', studentNames: [''],
+                startDate: '', endDate: '', reason: '', refundAmount: 0,
+            });
+        } catch (e) {
+            console.error("新增午餐停餐申請表時發生錯誤: ", e);
+            alertMessage("送出失敗，請重試。");
+        }
+    };
+
+    const handleHealthSubmit = async (e) => {
+        e.preventDefault();
+        if (!db || !userId) {
+            console.error("Firestore or User ID not available.");
+            return;
+        }
+        try {
+            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/healthReports`), {
+                ...healthForm,
+                timestamp: new Date(),
+            });
+            alertMessage("學童健康資料已成功送出！");
+            // Reset form
+            setHealthForm({
+                height: '', weight: '', visionLeft: '', visionRight: '',
+            });
+        } catch (e) {
+            console.error("新增學童健康資料時發生錯誤: ", e);
+            alertMessage("送出失敗，請重試。");
+        }
+    };
+
+    // Handle print button click
+    const handlePrint = () => {
+        if (printData) {
+            // Trigger print
+            window.print();
+        } else {
+            alertMessage("請先提交停餐申請表才能列印。");
+        }
+    };
+
+    // Custom alert message box (instead of window.alert)
+    const alertMessage = (message) => {
+        const alertBox = document.createElement('div');
+        alertBox.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50';
+        alertBox.textContent = message;
+        document.body.appendChild(alertBox);
+        setTimeout(() => {
+            document.body.removeChild(alertBox);
+        }, 3000);
+    };
+
+    // Helper function to render form fields
+    const renderFormField = (label, name, value, onChange, type = 'text', options = [], placeholder = '', min = '') => (
+        <div className="mb-4">
+            <label htmlFor={name} className="block text-gray-700 text-sm font-bold mb-2">
+                {label}
+            </label>
+            {type === 'select' ? (
+                <select
+                    id={name}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                    {options.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
+            ) : type === 'textarea' ? (
+                <textarea
+                    id={name}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-24"
+                />
+            ) : (
+                <input
+                    type={type}
+                    id={name}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    min={min} // Apply min attribute for date inputs
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+            )}
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-gray-100 font-sans antialiased flex flex-col items-center p-4">
+            {/* Tailwind CSS CDN */}
+            <script src="https://cdn.tailwindcss.com"></script>
+            {/* Font Inter */}
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+            <style>
+                {`
+                body {
+                    font-family: 'Inter', sans-serif;
+                }
+                .btn-primary {
+                    background-color: #4CAF50; /* Green */
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    transition: background-color 0.3s ease;
+                }
+                .btn-primary:hover {
+                    background-color: #45a049;
+                }
+                /* Print styles */
+                @media print {
+                    body > *:not(.printable-content) {
+                        display: none !important;
+                    }
+                    .printable-content {
+                        display: block !important;
+                        width: 100%;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .printable-content h2 {
+                        font-size: 1.5rem;
+                        margin-bottom: 1rem;
+                    }
+                    .printable-content .grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        gap: 1rem;
+                    }
+                    .printable-content .col-span-2 {
+                        grid-column: span 2 / span 2;
+                    }
+                    .printable-content .mb-12 {
+                        margin-bottom: 3rem;
+                    }
+                    .printable-content .border-b-2 {
+                        border-bottom-width: 2px;
+                    }
+                    .printable-content .border-dashed {
+                        border-style: dashed;
+                    }
+                    .printable-content .pb-8 {
+                        padding-bottom: 2rem;
+                    }
+                }
+                `}
+            </style>
+
+            <header className="w-full max-w-4xl bg-white shadow-md rounded-lg p-6 mb-8 text-center">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">國小學童午餐資料管理系統</h1>
+                <p className="text-gray-600">方便學童家長及學校衛生組進行午餐相關資料填報與管理</p>
+                {userId && (
+                    <p className="text-sm text-gray-500 mt-2">
+                        您的用戶ID: <span className="font-mono break-all">{userId}</span>
+                    </p>
+                )}
+            </header>
+
+            {/* Navigation */}
+            <nav className="w-full max-w-4xl bg-white shadow-md rounded-lg p-4 mb-8 flex flex-wrap justify-center gap-4">
+                <button
+                    onClick={() => setCurrentPage('order')}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${
+                        currentPage === 'order' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-100'
+                    }`}
+                >
+                    午餐意願調查
+                </button>
+                <button
+                    onClick={() => setCurrentPage('suspension')}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${
+                        currentPage === 'suspension' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-100'
+                    }`}
+                >
+                    午餐停餐申請
+                </button>
+                <button
+                    onClick={() => setCurrentPage('health')}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${
+                        currentPage === 'health' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-100'
+                    }`}
+                >
+                    學童健康填報
+                </button>
+                <button
+                    onClick={() => setCurrentPage('documents')}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${
+                        currentPage === 'documents' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-100'
+                    }`}
+                >
+                    衛生組文件
+                </button>
+            </nav>
+
+            <main className="w-full max-w-4xl bg-white shadow-md rounded-lg p-8">
+                {/* Lunch Order Form */}
+                {currentPage === 'order' && (
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">學童午餐意願調查表</h2>
+                        <form onSubmit={handleOrderSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            {renderFormField('年級', 'grade', orderForm.grade, handleOrderFormChange, 'number', [], '請輸入年級')}
+                            {renderFormField('班級', 'class', orderForm.class, handleOrderFormChange, 'text', [], '請輸入班級')}
+                            {renderFormField('座號/學號', 'studentId', orderForm.studentId, handleOrderFormChange, 'text', [], '請輸入座號或學號')}
+                            {renderFormField('學童姓名', 'studentName', orderForm.studentName, handleOrderFormChange, 'text', [], '請輸入學童姓名')}
+                            {renderFormField('家長姓名', 'parentName', orderForm.parentName, handleOrderFormChange, 'text', [], '請輸入家長姓名')}
+                            {renderFormField(
+                                '是否訂購',
+                                'isOrdering',
+                                orderForm.isOrdering,
+                                handleOrderFormChange,
+                                'select',
+                                [{ value: 'yes', label: '是' }, { value: 'no', label: '否' }]
+                            )}
+                            {renderFormField(
+                                '葷素食',
+                                'diet',
+                                orderForm.diet,
+                                handleOrderFormChange,
+                                'select',
+                                [{ value: 'meat', label: '葷食' }, { value: 'vegetarian', label: '素食' }]
+                            )}
+                            {renderFormField(
+                                '牛奶日',
+                                'milkDay',
+                                orderForm.milkDay,
+                                handleOrderFormChange,
+                                'select',
+                                [{ value: 'milk', label: '牛奶' }, { value: 'fruit', label: '換水果' }]
+                            )}
+                            <div className="md:col-span-2 flex justify-center mt-6">
+                                <button
+                                    type="submit"
+                                    className="btn-primary px-8 py-3 text-lg font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    送出午餐意願
+                                </button>
+                            </div>
+                        </form>
+
+                        <h3 className="text-xl font-bold text-gray-800 mt-10 mb-4 border-b pb-2">已送出的午餐意願</h3>
+                        {submittedOrders.length === 0 ? (
+                            <p className="text-gray-600">目前沒有已送出的午餐意願資料。</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年級</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班級</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">學童姓名</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">是否訂購</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">葷素食</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">牛奶日</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">送出時間</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {submittedOrders.map((order) => (
+                                            <tr key={order.id}>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{order.grade}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{order.class}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{order.studentName}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{order.isOrdering === 'yes' ? '是' : '否'}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{order.diet === 'meat' ? '葷食' : '素食'}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{order.milkDay === 'milk' ? '牛奶' : '水果'}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {order.timestamp?.toDate().toLocaleString() || 'N/A'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Lunch Suspension Form */}
+                {currentPage === 'suspension' && (
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">學童午餐停餐申請表</h2>
+                        <form onSubmit={handleSuspensionSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            {renderFormField('年級', 'grade', suspensionForm.grade, handleSuspensionFormChange, 'number', [], '請輸入年級')}
+                            {renderFormField('班級', 'class', suspensionForm.class, handleSuspensionFormChange, 'text', [], '請輸入班級')}
+                            {renderFormField('座號', 'studentId', suspensionForm.studentId, handleSuspensionFormChange, 'text', [], '請輸入座號')}
+                            {renderFormField(
+                                '停餐人數',
+                                'numberOfStudents',
+                                suspensionForm.numberOfStudents,
+                                handleNumberOfStudentsChange,
+                                'select',
+                                Array.from({ length: 5 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))
+                            )}
+                            <div className="md:col-span-2">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    姓名 (可容許五個人之內共用)
+                                </label>
+                                {/* Dynamically render student name input fields based on numberOfStudents */}
+                                {Array.from({ length: parseInt(suspensionForm.numberOfStudents) }).map((_, index) => (
+                                    <input
+                                        key={index}
+                                        type="text"
+                                        value={suspensionForm.studentNames[index] || ''}
+                                        onChange={(e) => handleStudentNameChange(index, e.target.value)}
+                                        placeholder={`學童姓名 ${index + 1}`}
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2"
+                                    />
+                                ))}
+                            </div>
+                            {renderFormField('停餐開始日期', 'startDate', suspensionForm.startDate, handleSuspensionFormChange, 'date', [], '', minAllowedStartDate)}
+                            {renderFormField('停餐結束日期', 'endDate', suspensionForm.endDate, handleSuspensionFormChange, 'date', [], '', suspensionForm.startDate || minAllowedStartDate)}
+                            {renderFormField('停餐原因', 'reason', suspensionForm.reason, handleSuspensionFormChange, 'textarea', [], '請說明停餐原因')}
+                            <div className="md:col-span-2 flex justify-center mt-6 gap-4">
+                                <button
+                                    type="submit"
+                                    className="btn-primary px-8 py-3 text-lg font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    送出停餐申請
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handlePrint}
+                                    className="bg-indigo-600 text-white px-8 py-3 text-lg font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    列印申請表
+                                </button>
+                            </div>
+                        </form>
+
+                        <h3 className="text-xl font-bold text-gray-800 mt-10 mb-4 border-b pb-2">已送出的停餐申請</h3>
+                        {submittedSuspensions.length === 0 ? (
+                            <p className="text-gray-600">目前沒有已送出的停餐申請資料。</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年級</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班級</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">座號</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">學童姓名</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">停餐日期</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">停餐天數</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">退費金額</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">原因</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">送出時間</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {submittedSuspensions.map((suspension) => (
+                                            <tr key={suspension.id}>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{suspension.grade}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{suspension.class}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{suspension.studentId}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {suspension.studentNames?.filter(name => name).join(', ') || 'N/A'}
+                                                </td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {suspension.startDate} 到 {suspension.endDate}
+                                                </td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{suspension.actualSuspensionDays}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{suspension.refundAmount} 元</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{suspension.reason}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {suspension.timestamp?.toDate().toLocaleString() || 'N/A'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Student Health Report System */}
+                {currentPage === 'health' && (
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">學童身高、體重、視力填報系統</h2>
+                        <form onSubmit={handleHealthSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            {renderFormField('身高 (公分)', 'height', healthForm.height, handleHealthFormChange, 'number', [], '請輸入身高 (例如: 135.5)')}
+                            {renderFormField('體重 (公斤)', 'weight', healthForm.weight, handleHealthFormChange, 'number', [], '請輸入體重 (例如: 30.2)')}
+                            {renderFormField('左眼視力', 'visionLeft', healthForm.visionLeft, handleHealthFormChange, 'text', [], '請輸入左眼視力 (例如: 1.0)')}
+                            {renderFormField('右眼視力', 'visionRight', healthForm.visionRight, handleHealthFormChange, 'text', [], '請輸入右眼視力 (例如: 0.9)')}
+                            <div className="md:col-span-2 flex justify-center mt-6">
+                                <button
+                                    type="submit"
+                                    className="btn-primary px-8 py-3 text-lg font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    送出健康資料
+                                </button>
+                            </div>
+                        </form>
+
+                        <h3 className="text-xl font-bold text-gray-800 mt-10 mb-4 border-b pb-2">已送出的健康資料</h3>
+                        {submittedHealthReports.length === 0 ? (
+                            <p className="text-gray-600">目前沒有已送出的健康資料。</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">身高 (cm)</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">體重 (kg)</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">左眼視力</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">右眼視力</th>
+                                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">送出時間</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {submittedHealthReports.map((report) => (
+                                            <tr key={report.id}>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{report.height}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{report.weight}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{report.visionLeft}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">{report.visionRight}</td>
+                                                <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {report.timestamp?.toDate().toLocaleString() || 'N/A'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Hygiene Documents */}
+                {currentPage === 'documents' && (
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">衛生組相關文件</h2>
+                        <p className="text-gray-600 mb-4">
+                            以下是衛生組相關文件的連結。請注意，這些是範例連結，您需要將它們替換為您在 Google 雲端硬碟中實際文件的分享連結。
+                        </p>
+                        <ul className="list-disc list-inside space-y-3 text-blue-600">
+                            <li>
+                                <a href="https://docs.google.com/document/d/1_PLACEHOLDER_CLEANING_AREA_ASSIGNMENT/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    校園清掃區域班級分配圖表
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://docs.google.com/document/d/1_PLACEHOLDER_SUPERVISOR_ROSTER/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    督導人員配置表
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://docs.google.com/document/d/1_PLACEHOLDER_CLASS_ACTIVITY_LUNCH_SUSPENSION/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    班級活動申請停餐表
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://docs.google.com/document/d/1_PLACEHOLDER_RECYCLING_PLAN/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    資源回收施行計劃
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://docs.google.com/document/d/1_PLACEHOLDER_OTHER_DOCUMENT/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    其他相關文件
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                )}
+            </main>
+
+            {/* Hidden component for printing */}
+            <PrintableSuspensionForm data={printData} ref={printableRef} />
+        </div>
+    );
+}
+
+export default App;
